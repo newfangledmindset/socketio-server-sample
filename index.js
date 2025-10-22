@@ -3,7 +3,7 @@ const app = express();
 import { createServer } from 'http';
 const server = createServer(app);
 import { Server } from "socket.io";
-import locationSchema from './schemas/location.schema';
+import LocationSchema from './schemas/location.schema.js';
 const io = new Server(server);
 
 app.get('/', (req, res) => {
@@ -24,7 +24,7 @@ io.on('connection', (socket) => {
 
   socket.on('update', (data) => {
     try {
-      const { room, location } = locationSchema.parse(data);
+      const { room, location } = LocationSchema.parse(data);
       io.to(room).emit('update', location);
     } catch (error) {
       console.error("Invalid message received:", error.errors);
