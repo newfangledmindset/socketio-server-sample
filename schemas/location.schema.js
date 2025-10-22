@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const locationMessageSchema = z.object({
+const LocationMessageSchema = z.object({
   room: z.string().min(1),
   latitude: z.number(),
   longitude: z.number(),
