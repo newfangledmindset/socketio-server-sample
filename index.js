@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 const app = express();
 import { createServer } from 'http';
@@ -5,6 +6,8 @@ const server = createServer(app);
 import { Server } from "socket.io";
 import LocationSchema from './schemas/location.schema.js';
 const io = new Server(server);
+
+const __dirname = path.resolve();
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
