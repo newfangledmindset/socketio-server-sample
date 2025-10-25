@@ -7,4 +7,6 @@ const RequestSchema = z.object({
   nickname: z.string().min(1),
 });
 
+export type RequestData = z.infer<typeof RequestSchema>;
+
 export default RequestSchema;

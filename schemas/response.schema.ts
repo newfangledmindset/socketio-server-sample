@@ -6,4 +6,6 @@ const ResponseSchema = z.object({
   nickname: z.string().min(1),
 });
 
+export type ResponseData = z.infer<typeof ResponseSchema>;
+
 export default ResponseSchema;

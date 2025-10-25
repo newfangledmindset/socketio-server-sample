@@ -3,37 +3,31 @@ import express from 'express';
 const app = express();
 import { createServer } from 'http';
 const server = createServer(app);
-import { Server } from "socket.io";
-import RequestSchema from './schemas/request.schema.js';
+import { Server, Socket } from "socket.io";
+import RequestSchema, { RequestData } from './schemas/request.schema';
 import jwt from 'jsonwebtoken';
+import { ResponseData } from './schemas/response.schema';
 
 const io = new Server(server);
 
-const __dirname = path.resolve();
+const roomDataMap = new Map<string, Map<string, ResponseData>>();
 
-const roomDataMap = new Map();
-
-app.get('/', (req, res) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
   console.log('a user connected');
 
   const userId = socket.user;
 
-  socket.on('join', (roomId) => {
+  socket.on('join', (roomId: string) => {
     let dataMap = roomDataMap.get(roomId);
 
     if (!dataMap) {
       dataMap = new Map();
       roomDataMap.set(roomId, dataMap);
     }
-
-    dataMap.set(userId, {
-      latitude: 0,
-      longitude: 0,
-    });
 
     socket.join(roomId);
 
@@ -45,7 +39,7 @@ io.on('connection', (socket) => {
     console.log('user disconnected');
   });
 
-  socket.on('locationUpdate', (data) => {
+  socket.on('locationUpdate', (data: RequestData) => {
     try {
       console.log(data);
       const { roomId, latitude, longitude, nickname } = RequestSchema.parse(data);
@@ -54,18 +48,20 @@ io.on('connection', (socket) => {
         throw new Error(`Room ${roomId} does not exist.`);
       }
 
-      const userData = dataMap.get(userId);
-      if (!userData) {
-        throw new Error(`User ${userData} does not exist in Room ${roomId}`);
+      if (userId) {
+        const userData = dataMap.get(userId);
+        if (!userData) {
+          throw new Error(`User ${userData} does not exist in Room ${roomId}`);
+        }
+
+        dataMap.set(userId, { latitude, longitude, nickname });
+        const it = dataMap.values();
+        const response = Array.from(it);
+
+        console.log('Response: ', response);
+
+        io.to(roomId).emit('locationUpdated', response);
       }
-
-      dataMap.set(userId, { latitude, longitude, nickname });
-      const it = dataMap.values();
-      const response = Array.from(it);
-
-      console.log('Response: ', response);
-
-      io.to(roomId).emit('locationUpdated', response);
     } catch (error) {
       console.error("Invalid message received:", error);
       // Optionally, inform the client about the error
@@ -83,8 +79,12 @@ io.use((socket, next) => {
 
   const decodedToken = jwt.decode(token);
 
-  if (!decodedToken.userId) {
+  if (decodedToken === null || typeof decodedToken === 'string') {
     return next(new Error("Authentication error: Invalid token provided."));
+  }
+
+  if (!('userId' in decodedToken) || typeof decodedToken.userId !== 'string') {
+      return next(new Error("Authentication error: Invalid token payload."));
   }
 
   // user = userId
