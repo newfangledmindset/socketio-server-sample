@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-const LocationMessageSchema = z.object({
-  room: z.string().min(1),
+const ResponseSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   nickname: z.string().min(1),
 });
 
-export default { LocationMessageSchema };
+export default ResponseSchema;
